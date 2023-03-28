@@ -1,8 +1,6 @@
-package org.vaadin.addons.sample;
+package org.vaadin.addons.marker_editor;
 
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,7 +15,7 @@ public class ExampleViewIT extends AbstractTestBenchIntegrationTest {
 
     @Test
     public void componentIsPresent()  {
-        ClockElement elem = $(ClockElement.class).first();
-        Assert.assertNotNull(elem);
+        MarkerEditorElement edit = $(MarkerEditorElement.class).first();
+        Assert.assertNotNull(edit);
     }
 }

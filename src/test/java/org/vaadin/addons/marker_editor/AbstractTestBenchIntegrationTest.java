@@ -1,4 +1,4 @@
-package org.vaadin.addons.sample;
+package org.vaadin.addons.marker_editor;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
 
