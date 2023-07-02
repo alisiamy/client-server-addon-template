@@ -1,6 +1,7 @@
 import {html, LitElement, PropertyValueMap, PropertyValues, TemplateResult} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import * as d3 from 'd3';
+import * as assert from "assert";
 
 const drawAreaSelector = '#drawArea';
 
@@ -13,7 +14,8 @@ export class MarkerEditorElement extends LitElement {
     @property({type: String}) image: string;
     @property({type: Number}) width: number;
     @property({type: Number}) height: number;
-    private toResize : SVGElement | undefined;
+    private toResize: SVGElement | undefined;
+    private create_poly: Array<number>;
 
     public sendMessage() {
         //TODO
@@ -34,6 +36,7 @@ export class MarkerEditorElement extends LitElement {
         this._svg.attr('width', this.width);
         this._svg.attr('height', this.height);
         this.toResize = undefined;
+        this.create_poly = [];
         //construct d3 gedöns
 
     }
@@ -48,55 +51,87 @@ export class MarkerEditorElement extends LitElement {
         //d3.select(element).append(this._svg)
         const me = this;
         this._svg.on("mousedown", function (ev: Event) {
-            if (ev.target != this)
+            if (ev.target != this) {
+                me.create_poly = [];
                 return;
+            }
             let m = d3.pointer(ev);
             let sel = d3.select(this);
-            sel.append('circle')
-                .style("stroke", "lightgreen")
-                .style("fill", "transparent")
-                .attr('tabindex', '0')
-                .attr('focusable', 'true')
-                .attr("r", 10)
-                .attr("cx", m[0])
-                .attr("cy", m[1])
-                .on("mouseover", function (ev: Event) {
-                    let l = d3.select(this);
-                    l.style("stroke", "red");
-                })
-                .on("mouseout", function (ev: Event) {
-                    let l = d3.select(this);
-                    l.style("stroke", "lightgreen");
-                })
-                .on("mousedown", function (ev: Event) {
-                    this.setAttribute("resizing", "");
-                })
-                .on("mousemove", function (ev: Event) {
-                    let l = d3.select(this);
-                    if (!this.hasAttribute("resizing")) {
-                        return;
-                    }
-                    const m = d3.pointer(ev);
-                    const cx = l.attr("cx");
-                    const cy = l.attr("cy");
-                    const ox = m[0];
-                    const oy = m[1];
-                    const r = 10 + Math.ceil(Math.sqrt(((ox - cx) * (ox - cx)) + ((oy - cy) * (oy - cy))));
-                    l.attr("r", r);
-                })
-                .on("mouseup", function (ev: Event) {
-                    this.removeAttribute("resizing");
-                    me.sendMessage();
-
-                })
-                .on("keyup", function (ev: KeyboardEvent) {
-                    if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
-                        d3.select(this).remove();
-                    }
-                });
-        }).on("mousemove", function (ev : MouseEvent) {
-            if (me.toResize != undefined)
+            me.create_poly.push(m[0]);
+            me.create_poly.push(m[1]);
+            //assert(me.create_poly.length % 2 == 0, "number of entries does not match number of points");
+            if (me.create_poly.length >= 6) //need at least triangle for polygon
             {
+                sel.append('polygon')
+                    .style("stroke", "lightgreen")
+                    .style("fill", "transparent")
+                    .attr('tabindex', '0')
+                    .attr('focusable', 'true')
+                    .attr("points", me.toString(me.create_poly))
+                    .on("mouseover", function (ev: Event) {
+                        let l = d3.select(this);
+                        l.style("stroke", "red");
+                    })
+                    .on("mouseout", function (ev: Event) {
+                        let l = d3.select(this);
+                        l.style("stroke", "lightgreen");
+                    })
+                    .on("mousedown", function (ev: MouseEvent) {
+
+                        let pArray = me.toArray(this.getAttribute("points"));
+                        const m = d3.pointer(ev);
+                        const ox = m[0];
+                        const oy = m[1];
+
+                        const isOnPoint = me.onPoint(ox, oy, pArray);
+                        if (isOnPoint) {
+                            console.log("on point");
+                            this.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
+                            if (me.toResize == undefined)
+                                me.toResize = this;
+                            return;
+                        }
+
+                        //if not on point, maybe it is on line
+                        const isOnLine = me.onLine(ox, oy, pArray);
+                        if (isOnLine) {
+                            console.log("on line");
+                            pArray.splice(isOnLine, 0, oy);
+                            pArray.splice(isOnLine, 0, ox);
+                            this.setAttribute("points", me.toString(pArray));
+                            this.setAttribute("resizing", isOnLine + "," + (isOnLine + 1));
+                            if (me.toResize == undefined)
+                                me.toResize = this;
+                        }
+
+                    })
+                    .on("mousemove", function (ev: Event) {
+                        if (!this.hasAttribute("resizing")) {
+                            return;
+                        }
+                        const positions = this.getAttribute("resizing").split(",").map(val => Number(val));
+                        let pArray = me.toArray(this.getAttribute("points"));
+                        const m = d3.pointer(ev);
+                        const ox = m[0];
+                        const oy = m[1];
+                        pArray[positions[0]] = ox;
+                        pArray[positions[1]] = oy;
+                        this.setAttribute("points", me.toString(pArray));
+                    })
+                    .on("mouseup", function (ev: Event) {
+                        this.removeAttribute("resizing");
+                        me.toResize = undefined;
+                        me.sendMessage();
+
+                    })
+                    .on("keyup", function (ev: KeyboardEvent) {
+                        if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
+                            d3.select(this).remove();
+                        }
+                    });
+            }
+        }).on("mousemove", function (ev: MouseEvent) {
+            if (me.toResize != undefined) {
                 if (!me.toResize.hasAttribute("resizing")) {
                     return;
                 }
@@ -109,7 +144,7 @@ export class MarkerEditorElement extends LitElement {
                 pArray[positions[1]] = oy;
                 me.toResize.setAttribute("points", me.toString(pArray));
             }
-        }).on("mouseup", function (ev : Event) {
+        }).on("mouseup", function (ev: Event) {
             if (me.toResize != undefined)
                 me.toResize = undefined;
         });
@@ -211,7 +246,7 @@ export class MarkerEditorElement extends LitElement {
     }
 
     onLine(x: number, y: number, points: Array<number>): number | false {
-        for (let i = 0; i < points.length - 4; i += 2) {
+        for (let i = 0; i <= points.length - 3; i += 2) {
             const px1 = points[i];
             const py1 = points[i + 1];
             const px2 = points[i + 2];
@@ -224,8 +259,8 @@ export class MarkerEditorElement extends LitElement {
         }
 
         //last -> first
-        const px1 = points[points.length -2];
-        const py1 = points[points.length -1];
+        const px1 = points[points.length - 2];
+        const py1 = points[points.length - 1];
         const px2 = points[0];
         const py2 = points[1];
 
@@ -261,5 +296,5 @@ export class MarkerEditorElement extends LitElement {
 }
 
 interface MarkerEditorElementServerInterface {
-    somethingHappened(points : string): void;
+    somethingHappened(points: string): void;
 }
