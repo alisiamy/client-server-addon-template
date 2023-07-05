@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Tag("marker-editor")
 @JsModule("./marker-editor.ts")
@@ -32,8 +33,9 @@ public class MarkerEditor extends Component implements HasSize {
 
 //TODO
     @ClientCallable
-    public void somethingHappened(String points) {
-        System.out.println("Something happened in the browser: " + points);
+    public void sendMarker(String[] points) {
+        markerList = Arrays.stream(points).map(Marker::parse).collect(Collectors.toList());
+        System.out.println(markerList);
     }
 
     public void addMarker(Marker marker) {
@@ -54,5 +56,9 @@ public class MarkerEditor extends Component implements HasSize {
     public void setHeight(int height) {
         this.height = height;
         getElement().setProperty("height", this.height);
+    }
+
+    private List<Marker> parseMarker(String points) {
+        return null;
     }
 }

@@ -20,7 +20,8 @@ public class ExampleView extends VerticalLayout {
         editor = new MarkerEditor("https://www.google.nl/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png",400, 400);
         add(editor);
 
-        editor.addMarker(markers.get(0));
+        editor.addMarker(
+                markers.get(0));
         //Thread.sleep(10000);
     }
 }

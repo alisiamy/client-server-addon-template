@@ -10,16 +10,18 @@ const drawAreaSelector = '#drawArea';
 export class MarkerEditorElement extends LitElement {
     private _svg; //: SVGElement | undefined;
     $server?: MarkerEditorElementServerInterface;
-    @property({type: Array<String>}) markers: Array<String>;
     @property({type: String}) image: string;
     @property({type: Number}) width: number;
     @property({type: Number}) height: number;
+    private marker: Array<SVGElement>;
     private toResize: SVGElement | undefined;
     private create_poly: Array<number>;
 
-    public sendMessage() {
-        //TODO
-        this.$server!.somethingHappened("");
+    public sendPoints() {
+        //TODO: send only the incremental change
+        this.$server!.sendMarker(this.marker.map(function (poly) {
+            return poly.node().getAttribute("points");
+        }));
     }
 
     render(): TemplateResult {
@@ -28,7 +30,6 @@ export class MarkerEditorElement extends LitElement {
 
     constructor() {
         super();
-        this.markers = [];
         this.image = "";
         this._svg = d3.create("svg:svg");
         this.width = 400;
@@ -37,6 +38,7 @@ export class MarkerEditorElement extends LitElement {
         this._svg.attr('height', this.height);
         this.toResize = undefined;
         this.create_poly = [];
+        this.marker = [];
         //construct d3 gedöns
 
     }
@@ -46,9 +48,6 @@ export class MarkerEditorElement extends LitElement {
      */
     connectedCallback(): void {
         super.connectedCallback();
-        //const element = this.renderRoot.querySelector(drawAreaSelector);
-        //this._svg = d3.select(element).append('svg');
-        //d3.select(element).append(this._svg)
         const me = this;
         this._svg.on("mousedown", function (ev: Event) {
             if (ev.target != this) {
@@ -62,7 +61,7 @@ export class MarkerEditorElement extends LitElement {
             //assert(me.create_poly.length % 2 == 0, "number of entries does not match number of points");
             if (me.create_poly.length >= 6) //need at least triangle for polygon
             {
-                sel.append('polygon')
+                me.marker.push(sel.append('polygon')
                     .style("stroke", "lightgreen")
                     .style("fill", "transparent")
                     .attr('tabindex', '0')
@@ -121,14 +120,14 @@ export class MarkerEditorElement extends LitElement {
                     .on("mouseup", function (ev: Event) {
                         this.removeAttribute("resizing");
                         me.toResize = undefined;
-                        me.sendMessage();
+                        me.sendPoints();
 
                     })
                     .on("keyup", function (ev: KeyboardEvent) {
                         if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
                             d3.select(this).remove();
                         }
-                    });
+                    }));
             }
         }).on("mousemove", function (ev: MouseEvent) {
             if (me.toResize != undefined) {
@@ -175,8 +174,7 @@ export class MarkerEditorElement extends LitElement {
 
     addMarker(m: string) {
         const me = this;
-        this.markers.push(m);
-        this._svg.append("polygon")
+        me.marker.push(this._svg.append("polygon")
             .attr("points", m)
             .style("stroke", "lightgreen")
             .style("fill", "transparent")
@@ -235,14 +233,14 @@ export class MarkerEditorElement extends LitElement {
             .on("mouseup", function (ev: Event) {
                 this.removeAttribute("resizing");
                 me.toResize = undefined;
-                me.sendMessage();
+                me.sendPoints();
 
             })
             .on("keyup", function (ev: KeyboardEvent) {
                 if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
                     d3.select(this).remove();
                 }
-            });
+            }));
     }
 
     onLine(x: number, y: number, points: Array<number>): number | false {
@@ -296,5 +294,5 @@ export class MarkerEditorElement extends LitElement {
 }
 
 interface MarkerEditorElementServerInterface {
-    somethingHappened(points: string): void;
+    sendMarker(points: Array<String>): void;
 }
