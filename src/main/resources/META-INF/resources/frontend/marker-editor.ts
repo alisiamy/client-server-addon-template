@@ -115,7 +115,7 @@ export class MarkerEditorElement extends LitElement {
         const m = d3.pointer(ev);
         const ox = m[0];
         const oy = m[1];
-
+//TODO: don't find first match, find best match with smallest distance
         const isOnPoint = this.onPoint(ox, oy, pArray);
         if (isOnPoint) {
             obj.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
@@ -136,18 +136,18 @@ export class MarkerEditorElement extends LitElement {
         }
     }
 
-    private mouseMoveHandler(obj: SVGElement, ev :KeyboardEvent) {
-            if (!obj.hasAttribute("resizing")) {
-                return;
-            }
-            const positions = obj.getAttribute("resizing").split(",").map(val => Number(val));
-            let pArray = this.toArray(obj.getAttribute("points"));
-            const m = d3.pointer(ev);
-            const ox = m[0];
-            const oy = m[1];
-            pArray[positions[0]] = ox;
-            pArray[positions[1]] = oy;
-            obj.setAttribute("points", this.toString(pArray));
+    private mouseMoveHandler(obj: SVGElement, ev: KeyboardEvent) {
+        if (!obj.hasAttribute("resizing")) {
+            return;
+        }
+        const positions = obj.getAttribute("resizing").split(",").map(val => Number(val));
+        let pArray = this.toArray(obj.getAttribute("points"));
+        const m = d3.pointer(ev);
+        const ox = m[0];
+        const oy = m[1];
+        pArray[positions[0]] = ox;
+        pArray[positions[1]] = oy;
+        obj.setAttribute("points", this.toString(pArray));
     }
 
     /** Controls whether an update rendering should proceed.

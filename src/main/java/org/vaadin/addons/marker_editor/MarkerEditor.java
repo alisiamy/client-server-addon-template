@@ -48,6 +48,13 @@ public class MarkerEditor extends Component implements HasSize {
         getElement().callJsFunction("clearMarkers");
     }
 
+    public void addAll(List<Marker> markers)
+    {
+        //TODO: send entire set of markers for insertion
+        for (var marker : markers)
+            this.addMarker(marker);
+    }
+
     public void setBackground(String background) {
         this.image = background;
         getElement().setProperty("image", "url('" + this.image + "')");
