@@ -125,7 +125,9 @@ export class MarkerEditorElement extends LitElement {
                     })
                     .on("keyup", function (ev: KeyboardEvent) {
                         if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
+                            me.marker.splice(me.marker.indexOf(this, 0), 1);
                             d3.select(this).remove();
+                            me.sendPoints();
                         }
                     }));
             }
@@ -172,6 +174,11 @@ export class MarkerEditorElement extends LitElement {
         return super.shouldUpdate(changedProperties);
     }
 
+    clearMarker() {
+        this.marker.forEach(m => m.remove());
+        this.marker = [];
+    }
+
     addMarker(m: string) {
         const me = this;
         me.marker.push(this._svg.append("polygon")
@@ -197,7 +204,6 @@ export class MarkerEditorElement extends LitElement {
 
                 const isOnPoint = me.onPoint(ox, oy, pArray);
                 if (isOnPoint) {
-                    console.log("on point");
                     this.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
                     if (me.toResize == undefined)
                         me.toResize = this;
@@ -207,7 +213,6 @@ export class MarkerEditorElement extends LitElement {
                 //if not on point, maybe it is on line
                 const isOnLine = me.onLine(ox, oy, pArray);
                 if (isOnLine) {
-                    console.log("on line");
                     pArray.splice(isOnLine, 0, oy);
                     pArray.splice(isOnLine, 0, ox);
                     this.setAttribute("points", me.toString(pArray));
@@ -238,7 +243,10 @@ export class MarkerEditorElement extends LitElement {
             })
             .on("keyup", function (ev: KeyboardEvent) {
                 if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
+                    //delete poly from marker list
+                    me.marker.splice(me.marker.indexOf(this, 0), 1);
                     d3.select(this).remove();
+                    me.sendPoints();
                 }
             }));
     }

@@ -43,6 +43,11 @@ public class MarkerEditor extends Component implements HasSize {
         getElement().callJsFunction("addMarker", marker.getJsPoints());
     }
 
+    public void clearMarkers() {
+        markerList.clear();
+        getElement().callJsFunction("clearMarkers");
+    }
+
     public void setBackground(String background) {
         this.image = background;
         getElement().setProperty("image", "url('" + this.image + "')");
@@ -56,9 +61,5 @@ public class MarkerEditor extends Component implements HasSize {
     public void setHeight(int height) {
         this.height = height;
         getElement().setProperty("height", this.height);
-    }
-
-    private List<Marker> parseMarker(String points) {
-        return null;
     }
 }
