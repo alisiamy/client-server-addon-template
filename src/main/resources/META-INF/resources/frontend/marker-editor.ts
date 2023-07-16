@@ -1,14 +1,11 @@
-import {html, LitElement, PropertyValueMap, PropertyValues, TemplateResult} from 'lit';
+import {LitElement, PropertyValues, TemplateResult} from 'lit';
 import {customElement, property} from 'lit/decorators.js';
 import * as d3 from 'd3';
-import * as assert from "assert";
-
-const drawAreaSelector = '#drawArea';
 
 
 @customElement('marker-editor')
 export class MarkerEditorElement extends LitElement {
-    private _svg; //: SVGElement | undefined;
+    private readonly _svg; //: SVGElement | undefined;
     $server?: MarkerEditorElementServerInterface;
     @property({type: String}) image: string;
     @property({type: Number}) width: number;
@@ -76,46 +73,10 @@ export class MarkerEditorElement extends LitElement {
                         l.style("stroke", "lightgreen");
                     })
                     .on("mousedown", function (ev: MouseEvent) {
-
-                        let pArray = me.toArray(this.getAttribute("points"));
-                        const m = d3.pointer(ev);
-                        const ox = m[0];
-                        const oy = m[1];
-
-                        const isOnPoint = me.onPoint(ox, oy, pArray);
-                        if (isOnPoint) {
-                            console.log("on point");
-                            this.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
-                            if (me.toResize == undefined)
-                                me.toResize = this;
-                            return;
-                        }
-
-                        //if not on point, maybe it is on line
-                        const isOnLine = me.onLine(ox, oy, pArray);
-                        if (isOnLine) {
-                            console.log("on line");
-                            pArray.splice(isOnLine, 0, oy);
-                            pArray.splice(isOnLine, 0, ox);
-                            this.setAttribute("points", me.toString(pArray));
-                            this.setAttribute("resizing", isOnLine + "," + (isOnLine + 1));
-                            if (me.toResize == undefined)
-                                me.toResize = this;
-                        }
-
+                        me.mouseDownHandler(this, ev);
                     })
-                    .on("mousemove", function (ev: Event) {
-                        if (!this.hasAttribute("resizing")) {
-                            return;
-                        }
-                        const positions = this.getAttribute("resizing").split(",").map(val => Number(val));
-                        let pArray = me.toArray(this.getAttribute("points"));
-                        const m = d3.pointer(ev);
-                        const ox = m[0];
-                        const oy = m[1];
-                        pArray[positions[0]] = ox;
-                        pArray[positions[1]] = oy;
-                        this.setAttribute("points", me.toString(pArray));
+                    .on("mousemove", function (ev: KeyboardEvent) {
+                        me.mouseMoveHandler(this, ev);
                     })
                     .on("mouseup", function (ev: Event) {
                         this.removeAttribute("resizing");
@@ -124,11 +85,7 @@ export class MarkerEditorElement extends LitElement {
 
                     })
                     .on("keyup", function (ev: KeyboardEvent) {
-                        if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
-                            me.marker.splice(me.marker.indexOf(this, 0), 1);
-                            d3.select(this).remove();
-                            me.sendPoints();
-                        }
+                        me.deleteKeyPressHandler(this, ev);
                     }));
             }
         }).on("mousemove", function (ev: MouseEvent) {
@@ -153,6 +110,46 @@ export class MarkerEditorElement extends LitElement {
             .style("background", this.image);
     }
 
+    private mouseDownHandler(obj: SVGElement, ev: MouseEvent) {
+        let pArray = this.toArray(obj.getAttribute("points"));
+        const m = d3.pointer(ev);
+        const ox = m[0];
+        const oy = m[1];
+
+        const isOnPoint = this.onPoint(ox, oy, pArray);
+        if (isOnPoint) {
+            obj.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
+            if (this.toResize == undefined)
+                this.toResize = obj;
+            return;
+        }
+
+        //if not on point, maybe it is on line
+        const isOnLine = this.onLine(ox, oy, pArray);
+        if (isOnLine) {
+            pArray.splice(isOnLine, 0, oy);
+            pArray.splice(isOnLine, 0, ox);
+            obj.setAttribute("points", this.toString(pArray));
+            obj.setAttribute("resizing", isOnLine + "," + (isOnLine + 1));
+            if (this.toResize == undefined)
+                this.toResize = obj;
+        }
+    }
+
+    private mouseMoveHandler(obj: SVGElement, ev :KeyboardEvent) {
+            if (!obj.hasAttribute("resizing")) {
+                return;
+            }
+            const positions = obj.getAttribute("resizing").split(",").map(val => Number(val));
+            let pArray = this.toArray(obj.getAttribute("points"));
+            const m = d3.pointer(ev);
+            const ox = m[0];
+            const oy = m[1];
+            pArray[positions[0]] = ox;
+            pArray[positions[1]] = oy;
+            obj.setAttribute("points", this.toString(pArray));
+    }
+
     /** Controls whether an update rendering should proceed.
      *
      *  We only override this to restart the timer if 'updateInterval' property has changed.
@@ -175,7 +172,7 @@ export class MarkerEditorElement extends LitElement {
     }
 
     clearMarker() {
-        this.marker.forEach(m => m.remove());
+        this.marker.forEach(m => d3.select(m).remove());
         this.marker = [];
     }
 
@@ -196,44 +193,10 @@ export class MarkerEditorElement extends LitElement {
                 l.style("stroke", "lightgreen");
             })
             .on("mousedown", function (ev: MouseEvent) {
-
-                let pArray = me.toArray(this.getAttribute("points"));
-                const m = d3.pointer(ev);
-                const ox = m[0];
-                const oy = m[1];
-
-                const isOnPoint = me.onPoint(ox, oy, pArray);
-                if (isOnPoint) {
-                    this.setAttribute("resizing", isOnPoint + "," + (isOnPoint + 1));
-                    if (me.toResize == undefined)
-                        me.toResize = this;
-                    return;
-                }
-
-                //if not on point, maybe it is on line
-                const isOnLine = me.onLine(ox, oy, pArray);
-                if (isOnLine) {
-                    pArray.splice(isOnLine, 0, oy);
-                    pArray.splice(isOnLine, 0, ox);
-                    this.setAttribute("points", me.toString(pArray));
-                    this.setAttribute("resizing", isOnLine + "," + (isOnLine + 1));
-                    if (me.toResize == undefined)
-                        me.toResize = this;
-                }
-
+                me.mouseDownHandler(this, ev);
             })
-            .on("mousemove", function (ev: Event) {
-                if (!this.hasAttribute("resizing")) {
-                    return;
-                }
-                const positions = this.getAttribute("resizing").split(",").map(val => Number(val));
-                let pArray = me.toArray(this.getAttribute("points"));
-                const m = d3.pointer(ev);
-                const ox = m[0];
-                const oy = m[1];
-                pArray[positions[0]] = ox;
-                pArray[positions[1]] = oy;
-                this.setAttribute("points", me.toString(pArray));
+            .on("mousemove", function (ev: KeyboardEvent) {
+                me.mouseMoveHandler(this, ev);
             })
             .on("mouseup", function (ev: Event) {
                 this.removeAttribute("resizing");
@@ -242,13 +205,17 @@ export class MarkerEditorElement extends LitElement {
 
             })
             .on("keyup", function (ev: KeyboardEvent) {
-                if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
-                    //delete poly from marker list
-                    me.marker.splice(me.marker.indexOf(this, 0), 1);
-                    d3.select(this).remove();
-                    me.sendPoints();
-                }
+                me.deleteKeyPressHandler(this, ev);
             }));
+    }
+
+    private deleteKeyPressHandler(obj: SVGElement, ev: KeyboardEvent) {
+        if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
+            //delete poly from marker list
+            this.marker.splice(this.marker.indexOf(obj, 0), 1);
+            d3.select(obj).remove();
+            this.sendPoints();
+        }
     }
 
     onLine(x: number, y: number, points: Array<number>): number | false {
