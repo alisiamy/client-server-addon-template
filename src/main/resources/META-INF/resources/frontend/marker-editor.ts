@@ -21,6 +21,16 @@ export class MarkerEditorElement extends LitElement {
         }));
     }
 
+    public sendCurrentPoint(m : SVGElement) {
+        //TODO: send only the incremental change
+        this.$server!.sendCurrentMarker(this.marker.findIndex(e => e.node() === m));
+    }
+
+    public sendNoPoint() {
+        //TODO: send only the incremental change
+        this.$server!.sendCurrentMarker(-1);
+    }
+
     render(): TemplateResult {
         return [this._svg];
     }
@@ -67,10 +77,12 @@ export class MarkerEditorElement extends LitElement {
                     .on("mouseover", function (ev: Event) {
                         let l = d3.select(this);
                         l.style("stroke", "red");
+                        me.sendCurrentPoint(this);
                     })
                     .on("mouseout", function (ev: Event) {
                         let l = d3.select(this);
                         l.style("stroke", "lightgreen");
+                        me.sendNoPoint();
                     })
                     .on("mousedown", function (ev: MouseEvent) {
                         me.mouseDownHandler(this, ev);
@@ -187,10 +199,12 @@ export class MarkerEditorElement extends LitElement {
             .on("mouseover", function (ev: Event) {
                 let l = d3.select(this);
                 l.style("stroke", "red");
+                me.sendCurrentPoint(this);
             })
             .on("mouseout", function (ev: Event) {
                 let l = d3.select(this);
                 l.style("stroke", "lightgreen");
+                me.sendNoPoint();
             })
             .on("mousedown", function (ev: MouseEvent) {
                 me.mouseDownHandler(this, ev);
@@ -212,7 +226,7 @@ export class MarkerEditorElement extends LitElement {
     private deleteKeyPressHandler(obj: SVGElement, ev: KeyboardEvent) {
         if (ev.key == "Delete" || ev.key == "Del" || ev.key == "Backspace") {
             //delete poly from marker list
-            this.marker.splice(this.marker.indexOf(obj, 0), 1);
+            this.marker.splice(this.marker.findIndex(m => m.node() === obj), 1);
             d3.select(obj).remove();
             this.sendPoints();
         }
@@ -270,4 +284,5 @@ export class MarkerEditorElement extends LitElement {
 
 interface MarkerEditorElementServerInterface {
     sendMarker(points: Array<String>): void;
+    sendCurrentMarker(m: number): void;
 }

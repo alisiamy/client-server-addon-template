@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.vaadin.addons.example</groupId>
-    <artifactId>clock</artifactId>
-    <version>1.0.0</version>
-    <name>Clock</name>
-    <description>Clock widget example for Vaadin</description>
+    <groupId>org.vaadin.addons.hsi</groupId>
+    <artifactId>marker_editor</artifactId>
+    <version>0.1.0</version>
+    <name>Marker Editor</name>
+    <description>An editor to modify markers in the HSI-Webapp</description>
 
     <properties>
         <vaadin.version>23.3.11</vaadin.version>
@@ -22,7 +22,7 @@
     </properties>
 
     <organization>
-        <name>###author###</name>
+        <name>Darija Grisanova</name>
     </organization>
     <licenses>
         <license>
