@@ -120,6 +120,8 @@ export class MarkerEditorElement extends LitElement {
         });
         this._svg
             .style("background", this.image);
+        this._svg.attr('width', this.width);
+        this._svg.attr('height', this.height);
     }
 
     private mouseDownHandler(obj: SVGElement, ev: MouseEvent) {
@@ -174,10 +176,12 @@ export class MarkerEditorElement extends LitElement {
         }
         if (changedProperties.has("width")) {
             const w = changedProperties.get("width");
+            this.width = w;
             this._svg.attr("width", w);
         }
         if (changedProperties.has("height")) {
             const h = changedProperties.get("height");
+            this.height = h;
             this._svg.attr("height", h);
         }
         return super.shouldUpdate(changedProperties);

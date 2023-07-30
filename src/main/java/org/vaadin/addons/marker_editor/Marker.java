@@ -1,6 +1,6 @@
 package org.vaadin.addons.marker_editor;
 
-import java.awt.*;
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +37,15 @@ public class Marker {
 
     public static Marker parse(String points) {
         return Marker.fromInts(Arrays.stream(points.split(" ")).map(Integer::valueOf).collect(Collectors.toList()));
+    }
+
+    public List<Point> getPoints()
+    {
+        List<Point> ret = new ArrayList<>();
+        for (var i = 0; i < points.size(); i+=2)
+            ret.add(new Point(points.get(i), points.get(i+1)));
+
+        return ret;
     }
 
     @Override
